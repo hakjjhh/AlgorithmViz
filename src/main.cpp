@@ -1,6 +1,8 @@
 #include <graphics.h>
 #include <vector>
 #include <string>
+#include <ctime>
+#include "../include/AVLTree.h" 
 
 // ================== 配置与配色 ==================
 const COLORREF C_BG = RGB(240, 242, 245);
@@ -41,9 +43,52 @@ void showDemoPage(LPCTSTR title) {
 
 void runDijkstra() { showDemoPage(_T("Dijkstra 最短路径演示")); }
 void runPrim() { showDemoPage(_T("Prim 最小生成树演示")); }
-void runAVL() { showDemoPage(_T("AVL 平衡二叉树演示")); }
 
-// ================== UI 组件 ==================
+// ================== 真实的 AVL 演示逻辑 (优化版) ==================
+void runAVL() {
+    setbkcolor(WHITE);
+    cleardevice();
+
+    AVLTree tree;
+
+    bool exitFlag = false;
+    ExMessage msg;
+
+    // 强制先绘制一次
+    settextcolor(BLACK);
+    settextstyle(20, 0, _T("微软雅黑"));
+    outtextxy(10, 10, _T("【AVL树演示模式】"));
+    outtextxy(10, 40, _T("操作方法："));
+    outtextxy(10, 70, _T("1. 按 [空格键] 或 [点击鼠标左键] 插入节点"));
+    outtextxy(10, 100, _T("2. 按 [ESC] 返回主菜单"));
+    FlushBatchDraw();
+
+    while (!exitFlag) {
+        while (peekmessage(&msg, EM_MOUSE | EM_KEY)) {
+            bool needInsert = false;
+
+            if (msg.message == WM_KEYDOWN && msg.vkcode == VK_SPACE) needInsert = true;
+            else if (msg.message == WM_LBUTTONDOWN) needInsert = true;
+            else if (msg.message == WM_KEYDOWN && msg.vkcode == VK_ESCAPE) exitFlag = true;
+
+            if (needInsert) {
+                int val = rand() % 99 + 1;
+                tree.insert(val);
+                cleardevice();
+                settextcolor(BLACK);
+                outtextxy(10, 10, _T("【AVL树演示模式】"));
+                outtextxy(10, 40, _T("操作方法："));
+                outtextxy(10, 70, _T("1. 按 [空格键] 或 [点击鼠标左键] 插入节点"));
+                outtextxy(10, 100, _T("2. 按 [ESC] 返回主菜单"));
+                tree.draw();
+                FlushBatchDraw();
+            }
+        }
+        Sleep(10);
+    }
+}
+
+// ================== UI 组件 (已修复点击Bug) ==================
 struct ModernButton {
     int x, y, w, h, id;
     LPCTSTR text;
@@ -53,11 +98,17 @@ struct ModernButton {
         : x(_x), y(_y), w(_w), h(_h), text(_text), id(_id), isHover(false) {
     }
 
-    bool checkHover(int mx, int my) {
-        bool nowHover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+    // 修复1：新增一个纯粹的检查函数，不修改状态
+    bool contains(int mx, int my) {
+        return (mx >= x && mx <= x + w && my >= y && my <= y + h);
+    }
+
+    // 修复2：updateHover 只负责更新视觉状态
+    bool updateHover(int mx, int my) {
+        bool nowHover = contains(mx, my);
         if (nowHover != isHover) {
             isHover = nowHover;
-            return true;
+            return true; // 状态变了，需要重绘
         }
         return false;
     }
@@ -83,27 +134,23 @@ struct ModernButton {
 void drawMainInterface(std::vector<ModernButton>& btns) {
     setbkcolor(C_BG);
     cleardevice();
-
     setfillcolor(C_THEME);
     solidrectangle(0, 0, 1024, 120);
-
     setbkmode(TRANSPARENT);
     settextcolor(WHITE);
     settextstyle(40, 0, _T("微软雅黑"));
     outtextxy(60, 40, _T("数据结构算法可视化系统"));
-
     setfillcolor(WHITE);
     setlinecolor(WHITE);
     solidroundrect(262, 160, 762, 610, 20, 20);
-
     settextcolor(C_TEXT_MAIN);
     settextstyle(26, 0, _T("微软雅黑"));
     outtextxy(410, 200, _T("请选择演示模块"));
-
     for (auto& btn : btns) btn.draw();
 }
 
 int main() {
+    srand((unsigned int)time(0));
     initgraph(1024, 768);
 
     std::vector<ModernButton> btns;
@@ -119,24 +166,30 @@ int main() {
 
     while (isRunning) {
         while (peekmessage(&msg, EM_MOUSE | EM_KEY)) {
+            // 1. 处理移动 (视觉效果)
             if (msg.message == WM_MOUSEMOVE) {
                 for (auto& btn : btns) {
-                    if (btn.checkHover(msg.x, msg.y)) needRedraw = true;
+                    // 这里用 updateHover
+                    if (btn.updateHover(msg.x, msg.y)) needRedraw = true;
                 }
             }
-            else if (msg.message == WM_LBUTTONUP) {
+            // 2. 处理点击 (逻辑跳转)
+            else if (msg.message == WM_LBUTTONDOWN) { // 改为按下触发，响应更快
                 for (auto& btn : btns) {
-                    if (btn.checkHover(msg.x, msg.y)) {
+                    // 这里用 contains，只要在里面就触发，不管是刚进来还是呆了很久
+                    if (btn.contains(msg.x, msg.y)) {
                         switch (btn.id) {
                         case 1: runDijkstra(); break;
                         case 2: runPrim(); break;
                         case 3: runAVL(); break;
                         }
                         needRedraw = true;
+                        // 重置状态
                         for (auto& b : btns) b.isHover = false;
                     }
                 }
             }
+            // 3. 键盘
             else if (msg.message == WM_KEYDOWN) {
                 if (msg.vkcode == VK_ESCAPE) isRunning = false;
                 if (msg.vkcode == '1') { runDijkstra(); needRedraw = true; }
