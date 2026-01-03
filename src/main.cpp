@@ -1,94 +1,16 @@
-#include <graphics.h>
+ï»¿#include <graphics.h>
 #include <vector>
 #include <string>
 #include <ctime>
 #include "../include/AVLTree.h" 
 
-// ================== ÅäÖÃÓëÅäÉ« ==================
-const COLORREF C_BG = RGB(240, 242, 245);
-const COLORREF C_THEME = RGB(24, 144, 255);
-const COLORREF C_SHADOW = RGB(220, 220, 220);
-const COLORREF C_TEXT_MAIN = RGB(38, 38, 38);
+// ================== é«˜çº§ UI é…è‰² ==================
+const COLORREF C_SIDEBAR = RGB(240, 240, 240); // ä¾§è¾¹æ ç°
+const COLORREF C_CANVAS = WHITE;              // ç»˜å›¾åŒºç™½
+const COLORREF C_STATUS = RGB(50, 50, 50);    // çŠ¶æ€æ æ·±ç°
+const COLORREF C_THEME = RGB(24, 144, 255);  // ä¸»é¢˜è“
 
-// ¸¨Öú£ºÇå¿ÕÏûÏ¢¶ÓÁĞ²¢µÈ´ıÈÎÒâÊäÈë
-void waitAnyKey() {
-    FlushMouseMsgBuffer();
-    ExMessage msg;
-    while (true) {
-        msg = getmessage(EM_MOUSE | EM_KEY);
-        if (msg.message == WM_LBUTTONUP || msg.message == WM_KEYDOWN)
-            return;
-    }
-}
-
-// ================== Ä£ÄâËã·¨Ä£¿é½Ó¿Ú ==================
-void showDemoPage(LPCTSTR title) {
-    setbkcolor(WHITE);
-    cleardevice();
-
-    settextcolor(C_THEME);
-    settextstyle(40, 0, _T("Î¢ÈíÑÅºÚ"));
-    int w = textwidth(title);
-    outtextxy((1024 - w) / 2, 300, title);
-
-    settextcolor(RGB(150, 150, 150));
-    settextstyle(20, 0, _T("Î¢ÈíÑÅºÚ"));
-    LPCTSTR tip = _T("µã»÷Êó±ê»ò°´ÈÎÒâ¼ü·µ»Ø...");
-    w = textwidth(tip);
-    outtextxy((1024 - w) / 2, 360, tip);
-
-    FlushBatchDraw();
-    waitAnyKey();
-}
-
-void runDijkstra() { showDemoPage(_T("Dijkstra ×î¶ÌÂ·¾¶ÑİÊ¾")); }
-void runPrim() { showDemoPage(_T("Prim ×îĞ¡Éú³ÉÊ÷ÑİÊ¾")); }
-
-// ================== ÕæÊµµÄ AVL ÑİÊ¾Âß¼­ (ÓÅ»¯°æ) ==================
-void runAVL() {
-    setbkcolor(WHITE);
-    cleardevice();
-
-    AVLTree tree;
-
-    bool exitFlag = false;
-    ExMessage msg;
-
-    // Ç¿ÖÆÏÈ»æÖÆÒ»´Î
-    settextcolor(BLACK);
-    settextstyle(20, 0, _T("Î¢ÈíÑÅºÚ"));
-    outtextxy(10, 10, _T("¡¾AVLÊ÷ÑİÊ¾Ä£Ê½¡¿"));
-    outtextxy(10, 40, _T("²Ù×÷·½·¨£º"));
-    outtextxy(10, 70, _T("1. °´ [¿Õ¸ñ¼ü] »ò [µã»÷Êó±ê×ó¼ü] ²åÈë½Úµã"));
-    outtextxy(10, 100, _T("2. °´ [ESC] ·µ»ØÖ÷²Ëµ¥"));
-    FlushBatchDraw();
-
-    while (!exitFlag) {
-        while (peekmessage(&msg, EM_MOUSE | EM_KEY)) {
-            bool needInsert = false;
-
-            if (msg.message == WM_KEYDOWN && msg.vkcode == VK_SPACE) needInsert = true;
-            else if (msg.message == WM_LBUTTONDOWN) needInsert = true;
-            else if (msg.message == WM_KEYDOWN && msg.vkcode == VK_ESCAPE) exitFlag = true;
-
-            if (needInsert) {
-                int val = rand() % 99 + 1;
-                tree.insert(val);
-                cleardevice();
-                settextcolor(BLACK);
-                outtextxy(10, 10, _T("¡¾AVLÊ÷ÑİÊ¾Ä£Ê½¡¿"));
-                outtextxy(10, 40, _T("²Ù×÷·½·¨£º"));
-                outtextxy(10, 70, _T("1. °´ [¿Õ¸ñ¼ü] »ò [µã»÷Êó±ê×ó¼ü] ²åÈë½Úµã"));
-                outtextxy(10, 100, _T("2. °´ [ESC] ·µ»ØÖ÷²Ëµ¥"));
-                tree.draw();
-                FlushBatchDraw();
-            }
-        }
-        Sleep(10);
-    }
-}
-
-// ================== UI ×é¼ş (ÒÑĞŞ¸´µã»÷Bug) ==================
+// é€šç”¨æŒ‰é’®ç»“æ„
 struct ModernButton {
     int x, y, w, h, id;
     LPCTSTR text;
@@ -98,114 +20,260 @@ struct ModernButton {
         : x(_x), y(_y), w(_w), h(_h), text(_text), id(_id), isHover(false) {
     }
 
-    // ĞŞ¸´1£ºĞÂÔöÒ»¸ö´¿´âµÄ¼ì²éº¯Êı£¬²»ĞŞ¸Ä×´Ì¬
     bool contains(int mx, int my) {
         return (mx >= x && mx <= x + w && my >= y && my <= y + h);
     }
-
-    // ĞŞ¸´2£ºupdateHover Ö»¸ºÔğ¸üĞÂÊÓ¾õ×´Ì¬
     bool updateHover(int mx, int my) {
-        bool nowHover = contains(mx, my);
-        if (nowHover != isHover) {
-            isHover = nowHover;
-            return true; // ×´Ì¬±äÁË£¬ĞèÒªÖØ»æ
-        }
+        bool now = contains(mx, my);
+        if (now != isHover) { isHover = now; return true; }
         return false;
     }
-
     void draw() {
-        if (!isHover) {
-            setfillcolor(C_SHADOW);
-            solidroundrect(x + 4, y + 4, x + w + 4, y + h + 4, 10, 10);
-        }
-        setlinecolor(isHover ? C_THEME : RGB(230, 230, 230));
         setfillcolor(isHover ? C_THEME : WHITE);
-        fillroundrect(x, y, x + w, y + h, 10, 10);
+        setlinecolor(isHover ? C_THEME : RGB(200, 200, 200));
+        fillroundrect(x, y, x + w, y + h, 5, 5);
 
         setbkmode(TRANSPARENT);
-        settextcolor(isHover ? WHITE : C_TEXT_MAIN);
-        settextstyle(22, 0, _T("Î¢ÈíÑÅºÚ"));
+        settextcolor(isHover ? WHITE : BLACK);
+        settextstyle(18, 0, _T("å¾®è½¯é›…é»‘"));
         int tx = x + (w - textwidth(text)) / 2;
         int ty = y + (h - textheight(text)) / 2;
         outtextxy(tx, ty, text);
     }
 };
 
-void drawMainInterface(std::vector<ModernButton>& btns) {
-    setbkcolor(C_BG);
-    cleardevice();
-    setfillcolor(C_THEME);
-    solidrectangle(0, 0, 1024, 120);
-    setbkmode(TRANSPARENT);
-    settextcolor(WHITE);
-    settextstyle(40, 0, _T("Î¢ÈíÑÅºÚ"));
-    outtextxy(60, 40, _T("Êı¾İ½á¹¹Ëã·¨¿ÉÊÓ»¯ÏµÍ³"));
-    setfillcolor(WHITE);
-    setlinecolor(WHITE);
-    solidroundrect(262, 160, 762, 610, 20, 20);
-    settextcolor(C_TEXT_MAIN);
-    settextstyle(26, 0, _T("Î¢ÈíÑÅºÚ"));
-    outtextxy(410, 200, _T("ÇëÑ¡ÔñÑİÊ¾Ä£¿é"));
-    for (auto& btn : btns) btn.draw();
+// è¾…åŠ©ï¼šæ¸…ç©ºæ¶ˆæ¯é˜Ÿåˆ—
+void waitAnyKey() {
+    FlushMouseMsgBuffer(); ExMessage msg;
+    while (true) {
+        msg = getmessage(EM_MOUSE | EM_KEY);
+        if (msg.message == WM_LBUTTONUP || msg.message == WM_KEYDOWN) return;
+    }
 }
 
-int main() {
-    srand((unsigned int)time(0));
-    initgraph(1024, 768);
+// ç®€å•çš„å ä½ç•Œé¢
+void showDemoPage(LPCTSTR title) {
+    setbkcolor(WHITE); cleardevice();
+    settextcolor(C_THEME); settextstyle(40, 0, _T("å¾®è½¯é›…é»‘"));
+    outtextxy(300, 300, title);
+    FlushBatchDraw(); waitAnyKey();
+}
+void runDijkstra() { showDemoPage(_T("Dijkstra æ¨¡å—")); }
+void runPrim() { showDemoPage(_T("Prim æ¨¡å—")); }
 
+// ================== AVL ç•Œé¢é€»è¾‘ ==================
+void drawAVLInterface(AVLTree& tree, std::vector<ModernButton>& btns) {
+    // 1. ä¾§è¾¹æ èƒŒæ™¯
+    setfillcolor(RGB(240, 240, 240));
+    solidrectangle(0, 0, 200, 720);
+    setlinecolor(RGB(200, 200, 200));
+    line(200, 0, 200, 720);
+
+    // 2. æ ‡é¢˜
+    setbkmode(TRANSPARENT);
+    settextcolor(RGB(24, 144, 255));
+    settextstyle(24, 0, _T("å¾®è½¯é›…é»‘"));
+    outtextxy(25, 30, _T("AVL ç®—æ³•æ¼”ç¤º"));
+
+    // 3. ç»Ÿè®¡ä¿¡æ¯ (æ–°å¢åŠŸèƒ½ï¼šæ˜¾ç¤ºæ ‘çš„å‚æ•°)
+    settextcolor(RGB(80, 80, 80));
+    settextstyle(16, 0, _T("å¾®è½¯é›…é»‘"));
+    TCHAR stats[100];
+    _stprintf_s(stats, _T("èŠ‚ç‚¹æ€»æ•°: %d"), tree.getNodeCount());
+    outtextxy(20, 400, stats);
+    _stprintf_s(stats, _T("æ ‘çš„é«˜åº¦: %d"), tree.getTreeHeight());
+    outtextxy(20, 425, stats);
+
+    // 4. æ“ä½œè¯´æ˜
+    settextcolor(RGB(150, 150, 150));
+    settextstyle(14, 0, _T("å®‹ä½“"));
+    outtextxy(20, 600, _T("æç¤º:"));
+    outtextxy(20, 620, _T("ç‚¹å³ä¾§ç©ºç™½: éšæœºæ’å…¥"));
+    outtextxy(20, 640, _T("ç‚¹èŠ‚ç‚¹: åˆ é™¤èŠ‚ç‚¹"));
+
+    // 5. ç»˜å›¾åŒºèƒŒæ™¯
+    setfillcolor(WHITE);
+    solidrectangle(201, 0, 1024, 720);
+
+    // 6. çŠ¶æ€æ 
+    setfillcolor(RGB(50, 50, 50));
+    solidrectangle(0, 720, 1024, 768);
+    settextcolor(WHITE);
+    settextstyle(18, 0, _T("å®‹ä½“"));
+    outtextxy(20, 735, tree.getLog().c_str());
+
+    // 7. ç»˜åˆ¶æŒ‰é’®å’Œæ ‘
+    for (auto& btn : btns) btn.draw();
+    tree.draw();
+}
+
+// AVLä¸»é€»è¾‘
+void runAVL() {
+    setbkcolor(WHITE); cleardevice();
+    AVLTree tree;
+
+    // é¢„è®¾å‡ ä¸ªæ•°æ®
+    tree.insert(50); tree.insert(20); tree.insert(80);
+
+    // å®šä¹‰æŒ‰é’® (è°ƒæ•´äº†å¸ƒå±€ï¼Œå¢åŠ äº†æ–°æŒ‰é’®)
     std::vector<ModernButton> btns;
-    btns.emplace_back(332, 280, 360, 60, _T("1. µÏ½ÜË¹ÌØÀ­ (Dijkstra)"), 1);
-    btns.emplace_back(332, 360, 360, 60, _T("2. ×îĞ¡Éú³ÉÊ÷ (Prim)"), 2);
-    btns.emplace_back(332, 440, 360, 60, _T("3. Æ½ºâ¶ş²æÊ÷ (AVL Tree)"), 3);
+    int btnX = 25, startY = 80, gap = 50;
 
-    BeginBatchDraw();
+    btns.emplace_back(btnX, startY, 150, 35, _T("æ’å…¥æŒ‡å®šå€¼"), 1); // æ–°å¢
+    btns.emplace_back(btnX, startY + gap, 150, 35, _T("éšæœºæ’å…¥"), 2);
+    btns.emplace_back(btnX, startY + gap * 2, 150, 35, _T("æ¼”ç¤ºæŸ¥æ‰¾"), 3);
+    btns.emplace_back(btnX, startY + gap * 3, 150, 35, _T("æ•°æ®éå†"), 5); // æ–°å¢
+    btns.emplace_back(btnX, startY + gap * 4, 150, 35, _T("æ¸…ç©ºç”»å¸ƒ"), 4);
+    btns.emplace_back(btnX, startY + gap * 5, 150, 35, _T("è¿”å›ä¸»èœå•"), 6);
 
-    bool isRunning = true;
-    bool needRedraw = true;
+    bool exitFlag = false;
     ExMessage msg;
+    bool needRedraw = true;
 
-    while (isRunning) {
+    while (!exitFlag) {
         while (peekmessage(&msg, EM_MOUSE | EM_KEY)) {
-            // 1. ´¦ÀíÒÆ¶¯ (ÊÓ¾õĞ§¹û)
             if (msg.message == WM_MOUSEMOVE) {
-                for (auto& btn : btns) {
-                    // ÕâÀïÓÃ updateHover
-                    if (btn.updateHover(msg.x, msg.y)) needRedraw = true;
-                }
+                for (auto& btn : btns) if (btn.updateHover(msg.x, msg.y)) needRedraw = true;
             }
-            // 2. ´¦Àíµã»÷ (Âß¼­Ìø×ª)
-            else if (msg.message == WM_LBUTTONDOWN) { // ¸ÄÎª°´ÏÂ´¥·¢£¬ÏìÓ¦¸ü¿ì
+            else if (msg.message == WM_LBUTTONDOWN) {
+                bool btnClicked = false;
+
+                // 1. æŒ‰é’®ç‚¹å‡»å¤„ç†
                 for (auto& btn : btns) {
-                    // ÕâÀïÓÃ contains£¬Ö»ÒªÔÚÀïÃæ¾Í´¥·¢£¬²»¹ÜÊÇ¸Õ½øÀ´»¹ÊÇ´ôÁËºÜ¾Ã
                     if (btn.contains(msg.x, msg.y)) {
+                        btnClicked = true;
                         switch (btn.id) {
-                        case 1: runDijkstra(); break;
-                        case 2: runPrim(); break;
-                        case 3: runAVL(); break;
+                        case 1: // === æ’å…¥æŒ‡å®šå€¼ ===
+                        {
+                            TCHAR buf[20];
+                            InputBox(buf, 20, _T("è¯·è¾“å…¥è¦æ’å…¥çš„æ•´æ•°:"), _T("ç²¾å‡†æ’å…¥"), _T(""), 0, 0, false);
+                            int val = _ttoi(buf);
+                            if (val != 0 || buf[0] == '0') {
+                                tree.insert(val);
+                            }
+                        }
+                        break;
+
+                        case 2: // éšæœºæ’å…¥
+                            tree.insert(rand() % 99 + 1);
+                            break;
+
+                        case 3: // æ¼”ç¤ºæŸ¥æ‰¾
+                        {
+                            TCHAR buf[20];
+                            InputBox(buf, 20, _T("è¯·è¾“å…¥è¦æŸ¥æ‰¾çš„æ•°å­—:"), _T("æ¼”ç¤ºæŸ¥æ‰¾"), _T(""), 0, 0, false);
+                            int val = _ttoi(buf);
+                            if (val != 0 || buf[0] == '0') {
+                                drawAVLInterface(tree, btns); // åˆ·æ–°å»æ®‹å½±
+                                if (!tree.search(val)) {
+                                    MessageBox(GetHWnd(), _T("æœªæ‰¾åˆ°è¯¥èŠ‚ç‚¹"), _T("æç¤º"), MB_OK | MB_ICONWARNING);
+                                }
+                            }
+                        }
+                        break;
+                        case 5:  //éå†ç»“æœ
+                        {
+                            std::wstring sPre, sIn, sPost;
+
+                            // è·å–ä¸‰ç§éå†ç»“æœ
+                            tree.preOrderTraversal(sPre);
+                            tree.inOrderTraversal(sIn);
+                            tree.postOrderTraversal(sPost);
+
+                            // æ‹¼æ¥æˆä¸€ä¸ªé•¿æ¶ˆæ¯
+                            std::wstring msg = L"=== AVLæ ‘ç»“æ„æ ¡éªŒ ===\n\n";
+                            msg += L"1. å‰åº (æ ¹å·¦å³): " + sPre + L"\n   [ä½œç”¨: è¿˜åŸæ ‘ç»“æ„]\n\n";
+                            msg += L"2. ä¸­åº (å·¦æ ¹å³): " + sIn + L"\n   [ä½œç”¨: éªŒè¯æœ‰åºæ€§]\n\n";
+                            msg += L"3. ååº (å·¦å³æ ¹): " + sPost + L"\n   [ä½œç”¨: éªŒè¯å­æ ‘å®Œæ•´]";
+
+                            // å¼¹çª—æ˜¾ç¤º
+                            MessageBox(GetHWnd(), msg.c_str(), _T("å®Œæ•´éå†æ•°æ®"), MB_OK | MB_ICONINFORMATION);
+                        }
+                        break;
+
+                        case 4: tree = AVLTree(); break; // æ¸…ç©º
+                        case 6: exitFlag = true; break;  // è¿”å›
                         }
                         needRedraw = true;
-                        // ÖØÖÃ×´Ì¬
-                        for (auto& b : btns) b.isHover = false;
                     }
                 }
-            }
-            // 3. ¼üÅÌ
-            else if (msg.message == WM_KEYDOWN) {
-                if (msg.vkcode == VK_ESCAPE) isRunning = false;
-                if (msg.vkcode == '1') { runDijkstra(); needRedraw = true; }
-                if (msg.vkcode == '2') { runPrim(); needRedraw = true; }
-                if (msg.vkcode == '3') { runAVL(); needRedraw = true; }
+
+                // 2. ç©ºç™½å¤„ç‚¹å‡» (å¿«æ·éšæœºæ’å…¥) / èŠ‚ç‚¹ç‚¹å‡» (åˆ é™¤)
+                if (!btnClicked && msg.x > 200) {
+                    Node* clickedNode = tree.findClickedNode(msg.x, msg.y);
+                    if (clickedNode) {
+                        // åˆ é™¤å‰ç¡®è®¤ä¸€ä¸‹ï¼ˆé˜²æ­¢æ‰‹æ»‘ï¼‰- å¯é€‰
+                        tree.remove(clickedNode->key);
+                    }
+                    else {
+                        tree.insert(rand() % 99 + 1);
+                    }
+                    needRedraw = true;
+                }
             }
         }
 
         if (needRedraw) {
-            drawMainInterface(btns);
+            drawAVLInterface(tree, btns);
             FlushBatchDraw();
             needRedraw = false;
         }
         Sleep(10);
     }
+}
 
+// ================== ä¸»èœå• (å…¥å£) ==================
+int main() {
+    srand((unsigned)time(0));
+    initgraph(1024, 768);
+    BeginBatchDraw();
+
+    // ä¸»èœå•æŒ‰é’®
+    std::vector<ModernButton> mainBtns;
+    mainBtns.emplace_back(332, 280, 360, 60, _T("1. è¿ªæ°æ–¯ç‰¹æ‹‰ (Dijkstra)"), 1);
+    mainBtns.emplace_back(332, 360, 360, 60, _T("2. æœ€å°ç”Ÿæˆæ ‘ (Prim)"), 2);
+    mainBtns.emplace_back(332, 440, 360, 60, _T("3. å¹³è¡¡äºŒå‰æ ‘ (AVL Tree)"), 3);
+
+    bool running = true;
+    bool needRedraw = true;
+    ExMessage msg;
+
+    while (running) {
+        while (peekmessage(&msg, EM_MOUSE | EM_KEY)) {
+            if (msg.message == WM_MOUSEMOVE) {
+                for (auto& b : mainBtns) if (b.updateHover(msg.x, msg.y)) needRedraw = true;
+            }
+            else if (msg.message == WM_LBUTTONDOWN) {
+                for (auto& b : mainBtns) {
+                    if (b.contains(msg.x, msg.y)) {
+                        switch (b.id) {
+                        case 1: runDijkstra(); break;
+                        case 2: runPrim(); break;
+                        case 3: runAVL(); break; // è¿›å…¥é«˜çº§AVLç•Œé¢
+                        }
+                        needRedraw = true;
+                        // é‡ç½®ä¸»èœå•æŒ‰é’®çŠ¶æ€
+                        for (auto& btn : mainBtns) btn.isHover = false;
+                    }
+                }
+            }
+            else if (msg.message == WM_KEYDOWN && msg.vkcode == VK_ESCAPE) running = false;
+        }
+
+        if (needRedraw) {
+            setbkcolor(RGB(240, 242, 245)); cleardevice();
+            setfillcolor(C_THEME); solidrectangle(0, 0, 1024, 120);
+            setbkmode(TRANSPARENT); settextcolor(WHITE); settextstyle(40, 0, _T("å¾®è½¯é›…é»‘"));
+            outtextxy(60, 40, _T("æ•°æ®ç»“æ„ç®—æ³•å¯è§†åŒ–ç³»ç»Ÿ"));
+            setfillcolor(WHITE); setlinecolor(WHITE); solidroundrect(262, 160, 762, 610, 20, 20);
+            settextcolor(RGB(38, 38, 38)); settextstyle(26, 0, _T("å¾®è½¯é›…é»‘"));
+            outtextxy(410, 200, _T("è¯·é€‰æ‹©æ¼”ç¤ºæ¨¡å—"));
+            for (auto& b : mainBtns) b.draw();
+            FlushBatchDraw();
+            needRedraw = false;
+        }
+        Sleep(10);
+    }
     EndBatchDraw();
     closegraph();
     return 0;

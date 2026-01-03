@@ -1,42 +1,54 @@
 #pragma once
-#include <algorithm> // 用于 std::max
-
-// 引入 EasyX 图形库 (因为节点里虽然没用图形类型，但设计逻辑相关)
+#include <algorithm>
 #include <graphics.h>
+#include <string>
 
-// AVL 树节点定义
 struct Node {
-    int key;        // 节点值
+    int key;
     Node* left;
     Node* right;
-    int height;     // 高度
-
-    // 可视化坐标
+    int height;
     int x, y;
 
     Node(int k) : key(k), left(nullptr), right(nullptr), height(1), x(0), y(0) {}
 };
 
-// AVL 树类声明
 class AVLTree {
 private:
     Node* root;
+    std::wstring lastLog; // 记录最后一条操作日志
 
-    // --- 内部算法辅助函数 ---
+    // 辅助函数
     int getHeight(Node* node);
     int getBalance(Node* node);
+    Node* minValueNode(Node* node);
+
     Node* rightRotate(Node* y);
     Node* leftRotate(Node* x);
     Node* insertNode(Node* node, int key);
+    Node* deleteNode(Node* root, int key);
+    bool searchNode(Node* node, int key);
 
-    // --- 内部可视化辅助函数 ---
     void updateCoordinates(Node* node, int x, int y, int offset);
     void drawLines(Node* node);
     void drawNodes(Node* node);
+    Node* getNodeAt(Node* node, int mx, int my);
 
 public:
-    AVLTree();  // 构造函数
+    AVLTree();
+    void insert(int key);
+    void remove(int key);
+    bool search(int key);
+    void inOrderTraversal(std::wstring& result); // 中序遍历接口
+    void preOrderTraversal(std::wstring& result);  // 前序
+    void postOrderTraversal(std::wstring& result); // 后序
+    int getNodeCount();                          // 获取节点数
+    int getTreeHeight();                         // 获取树高
 
-    void insert(int key); // 插入接口
-    void draw();          // 绘制接口
+    void draw();
+    Node* findClickedNode(int x, int y);
+    Node* getRoot();
+
+    // 获取日志用于状态栏显示
+    const std::wstring& getLog() { return lastLog; }
 };
